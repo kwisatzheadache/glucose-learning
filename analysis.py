@@ -11,10 +11,13 @@ from sklearn.linear_model import LogisticRegression
 from matplotlib import pyplot
 from pandas.tools.plotting import lag_plot
 from pandas.tools.plotting import autocorrelation_plot
+from scipy.stats.stats import pearsonr
 
 raw = read_csv('./CGM.csv', header=0)
-# ignore 'glucose', since it is calculated via 'isig'*k and therefore is correlated at R approaching 1
+
 isig = to_numeric(raw['isig'][:39450])
+glucose = to_numeric(raw['glucose'][:39450])
+pearsonr(isig, glucose)
 
 # Exploring the data
 
