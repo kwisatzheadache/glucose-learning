@@ -12,11 +12,16 @@ from matplotlib import pyplot
 from pandas.tools.plotting import lag_plot
 from pandas.tools.plotting import autocorrelation_plot
 from scipy.stats.stats import pearsonr
+from statsmodels.tsa.seasonal import seasonal_decompose
+from pandas import to_datetime
 
 raw = read_csv('./CGM.csv', header=0)
 
 isig = to_numeric(raw['isig'][:39450])
 glucose = to_numeric(raw['glucose'][:39450])
+datetime = raw['datetime'][:39450]
+series = DataFrame({'isig': isig, 'glucose': glucose})
+series.index = to_datetime(datetime)
 pearsonr(isig, glucose)
 
 # Exploring the data
@@ -35,6 +40,14 @@ pyplot.show()
 
 # Check for autocorrelation. As expected, isig is directly related to previous values. High autocorrelation.
 lag_plot(isig)
+pyplot.show()
+
+# Check for seasonality
+seasonal = seasonal_decompose(series['isig'], model='additive', frequence=10)
+seasonal.plot()
+pyplot.show()
+seasonal = seasonal_decompose(series['glucose'], model='additive', frequence=10)
+seasonal.plot()
 pyplot.show()
 
 # Manually shift the series to create window
