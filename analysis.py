@@ -88,4 +88,3 @@ result = model.score(X_test, Y_test)
 
 # Use train_test_split/4 instead
 
-
