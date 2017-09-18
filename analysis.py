@@ -1,98 +1,26 @@
-from pandas import Series
-from pandas import concat
-from pandas import read_csv
-from pandas import to_numeric
-from scipy.stats.stats import pearsonr
-from sklearn.metrics import mean_squared_error
-from math import sqrt
-from pandas import DataFrame
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
 from matplotlib import pyplot
+from keras.models import Sequential
+from keras import models
 from pandas.tools.plotting import lag_plot
 from pandas.tools.plotting import autocorrelation_plot
 from scipy.stats.stats import pearsonr
-from statsmodels.tsa.seasonal import seasonal_decompose
-from pandas import to_datetime
+from math import sqrt
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+from statsmodels.tsa.season import seasonal_decompose
 
-raw = read_csv('./CGM.csv', header=0)
+(persist_mae, persist_mse) = persist(isig)
 
-isig = to_numeric(raw['isig'][:39450])
-glucose = to_numeric(raw['glucose'][:39450])
-datetime = raw['datetime'][:39450]
-series = DataFrame({'isig': isig, 'glucose': glucose})
-series.index = to_datetime(datetime)
-pearsonr(isig, glucose)
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_size, random_state=seed)
 
-# Exploring the data
+model = Sequential()
+model.add(layers.Dense(64, activation='relu', input_shape=(X_train.shape[1],)))
+model.add(layers.Dense(1))
+model.compile(optimizer='rmsprop', loss='mse', metrics=['mae'])
 
-# Descriptive stats 
-isig.describe()
-isig.plot()
-pyplot.show()
+model.fit(X_train, Y_train, epochs=5, batch_size=1)
+ml5_mse, ml5_mae = model.evaluate(X_test, Y_test)
 
-# Skewed toward the higher side
-isig.hist()
-pyplot.show()
-# Significantly autocorrelated as expected.
-autocorrelation_plot(isig)
-pyplot.show()
-
-# Check for autocorrelation. As expected, isig is directly related to previous values. High autocorrelation.
-lag_plot(isig)
-pyplot.show()
-
-# Check for seasonality
-# seasonal = seasonal_decompose(series['isig'], model='additive', frequency=10)
-# seasonal.plot()
-# pyplot.show()
-# seasonal = seasonal_decompose(series['glucose'], model='additive', frequency=10)
-# seasonal.plot()
-# pyplot.show()
-
-# Manually shift the series to create window
-values = DataFrame(isig.values)
-tenshift = concat([values.shift(9), values.shift(8), values.shift(7), values.shift(6), values.shift(5), values.shift(4), values.shift(3), values.shift(2), values.shift(1), values], axis = 1)
-tenshift.columns = ['t-8', 't-7', 't-6', 't-5', 't-4', 't-3', 't-2', 't-1', 't', 't+1']
-
-# Function to automate creation of lagged data from variable and window-size
-def lag(variable, window):
-    df1 = DataFrame(variable)
-    for i in range(window):
-        j = window - i
-        df1 = concat([df1, variable.shift(j)], axis=1)
-    columns = [variable.name]
-    for i in range(window):
-        j = window - i
-        columns.append('t - %d' % j)
-    df1.columns = columns
-    return df1.iloc[window:]
-
-lagged = lag(isig, 10).values
-X = lagged[:, 1:]
-Y = lagged[:, 0]
-test_size = 0.33
-seed = 7
-
-# X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_size, random_state=seed)
-# model = LogisticRegression()
-# model.fit(X_train, Y_train)
-# result = model.score(X_test, Y_test)
-
-
-# Create binomial series. Column1 = current value Column2 = previous value.
-# Column1 is y_hat, predicted by column 2.... Essentially, column 2 is the prediction, column 1 is the actual. The difference is the error.
-def persist(x):
-    xy = lag(x, 1)
-    col = xy.columns
-    y_hat = xy[xy.columns[0]]
-    y = xy[xy.columns[1]]
-    error = []
-    for i in range(len(xy)):
-        delta = (y_hat[i+1] - y[i+1])
-        error.append(delta)
-    mae = sum(abs(err) for err in error)/len(error)
-    mse = sum(err*err for err in error)/len(error)
-    return (mae, mse)
-
+model.fit(X_train, Y_train, epochs=20, batch_size=1)
+ml20_mse, ml20_mae = model.evaluate(X_test, Y_test)
 
