@@ -43,12 +43,12 @@ lag_plot(isig)
 pyplot.show()
 
 # Check for seasonality
-seasonal = seasonal_decompose(series['isig'], model='additive', frequence=10)
-seasonal.plot()
-pyplot.show()
-seasonal = seasonal_decompose(series['glucose'], model='additive', frequence=10)
-seasonal.plot()
-pyplot.show()
+# seasonal = seasonal_decompose(series['isig'], model='additive', frequency=10)
+# seasonal.plot()
+# pyplot.show()
+# seasonal = seasonal_decompose(series['glucose'], model='additive', frequency=10)
+# seasonal.plot()
+# pyplot.show()
 
 # Manually shift the series to create window
 values = DataFrame(isig.values)
@@ -74,17 +74,25 @@ Y = lagged[:, 0]
 test_size = 0.33
 seed = 7
 
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_size, random_state=seed)
-model = LogisticRegression()
-model.fit(X_train, Y_train)
-result = model.score(X_test, Y_test)
+# X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_size, random_state=seed)
+# model = LogisticRegression()
+# model.fit(X_train, Y_train)
+# result = model.score(X_test, Y_test)
 
 
-# create training, validation, and test sets
-# split = int(len(lagged)/3)
-# train = lagged[:split]
-# valid = lagged[split:(split*2)]
-# test = lagged[split*2:]
+# Create binomial series. Column1 = current value Column2 = previous value.
+# Column1 is y_hat, predicted by column 2.... Essentially, column 2 is the prediction, column 1 is the actual. The difference is the error.
+def persist(x):
+    xy = lag(x, 1)
+    col = xy.columns
+    y_hat = xy[xy.columns[0]]
+    y = xy[xy.columns[1]]
+    error = []
+    for i in range(len(xy)):
+        delta = (y_hat[i+1] - y[i+1])
+        error.append(delta)
+    mae = sum(abs(err) for err in error)/len(error)
+    mse = sum(err*err for err in error)/len(error)
+    return (mae, mse)
 
-# Use train_test_split/4 instead
 
